@@ -19,8 +19,9 @@ controller = control_joystick.joystick_inits()
 
 def arcade_to_tank(inputs: list) -> list:
     """Returns tank drive outputs from an arcade drive input, performs some inverse kinematics"""
-    xSpeed = inputs[1] * -1
-    zRotation = inputs[0] 
+
+    xSpeed = inputs[0]
+    zRotation = inputs[1] 
     print("X Speed -> " + str(xSpeed), " | zRot -> " + str(zRotation))
     leftSpeed = 0
     rightSpeed = 0
