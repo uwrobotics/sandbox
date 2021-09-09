@@ -20,8 +20,8 @@ controller = control_joystick.joystick_inits()
 def arcade_to_tank(inputs: list) -> list:
     """Returns tank drive outputs from an arcade drive input, performs some inverse kinematics"""
 
-    xSpeed = inputs[0]
-    zRotation = inputs[1] 
+    xSpeed = inputs[1]
+    zRotation = inputs[0] * -1
     print("X Speed -> " + str(xSpeed), " | zRot -> " + str(zRotation))
     leftSpeed = 0
     rightSpeed = 0
@@ -55,7 +55,7 @@ def arcade_to_tank(inputs: list) -> list:
 def create_packet_from_list(tank_outputs: list):
     packet = bytearray()
     packet.append(tank_outputs[0])
-    packet.append(tank_outputs[1])
+    packet.append(tank_outputs[1]) 
     print(packet)
     return packet
 

@@ -3,6 +3,7 @@
 import socket
 import struct
 import RPi.GPIO as IO
+import time
 
 MCAST_GRP = '224.1.1.1'
 MCAST_PORT = 5007
@@ -13,6 +14,7 @@ pin_pwm_left = 13
 pin_pwm_right = 12
 pin_dir_left = 5
 pin_dir_right = 6
+timeout_s = 0.5
 
 data_struct = struct.Struct('>BB')
 
@@ -28,6 +30,7 @@ def init_socket():
         sock.bind((MCAST_GRP, MCAST_PORT))
     mreq = struct.pack("4sl", socket.inet_aton(MCAST_GRP), socket.INADDR_ANY)
     sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+    sock.settimeout(timeout_s)
 
 IO.setmode(IO.BCM) #set pin mappings
 IO.setup(pin_pwm_left, IO.OUT)
@@ -41,14 +44,13 @@ PWM_RIGHT_OBJ.start(0)
 
 def update_duty_cycle(left:int, right:int):
     """0 - 255, 127 deadpoint"""
-    print("Left -> " + str(left) + " | Right -> " + str(right))
     left = int((left - 127)/127*100)
     right = int((right - 127)/127*100)
     print("Left -> " + str(left) + " | Right -> " + str(right))
     if(left < 0):
-        IO.output(pin_dir_left, 1)
-    else:
         IO.output(pin_dir_left, 0)
+    else:
+        IO.output(pin_dir_left, 1)
 
     if(right < 0):
         IO.output(pin_dir_right, 1)
@@ -61,7 +63,11 @@ def update_duty_cycle(left:int, right:int):
 init_socket()   
 
 while True:
-  # For Python 3, change next line to "print(sock.recv(10240))"      
-  packet = sock.recv(10240)
-  decoded_msg = data_struct.unpack(packet)
-  update_duty_cycle(decoded_msg[0], decoded_msg[1])
+  try:
+    packet = sock.recv(10240)
+    decoded_msg = data_struct.unpack(packet)
+    update_duty_cycle(decoded_msg[0], decoded_msg[1])
+  except socket.timeout:
+      update_duty_cycle(127, 127) #Stop driving if transmissions stop
+
+  
