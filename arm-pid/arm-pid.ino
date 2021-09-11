@@ -18,6 +18,7 @@
 #include <SPI.h>
 #include <RobotLib.h>
 #include "CytronMotorDriver.h"
+// #include <Arduino_FreeRTOS.h>
 
 // Set Arduino SPI pins
 // For arduino mega 2560:
@@ -29,14 +30,15 @@
 // const int DO = 50;   // Serial Data (Encoder Output): 0 or 1, depending on the bar angle
 
 
+
 CytronMD motors[6] = 
   {
-    CytronMD(PWM_DIR, 12, 38),
-    CytronMD(PWM_DIR, 3, 4),
-    CytronMD(PWM_DIR, 3, 4),
-    CytronMD(PWM_DIR, 3, 4),
-    CytronMD(PWM_DIR, 3, 4),
-    CytronMD(PWM_DIR, 3, 4),
+    CytronMD(PWM_DIR, 2, 38),
+    CytronMD(PWM_DIR, 3, 40),
+    CytronMD(PWM_DIR, 4, 42),
+    CytronMD(PWM_DIR, 5, 44),
+    CytronMD(PWM_DIR, 6, 46),
+    CytronMD(PWM_DIR, 7, 48),
   };
 
 const int spi_pins[6][3] =
@@ -66,13 +68,13 @@ int joint_positions[6] = {0, 0, 0, 0, 0, 0};
 
 PIDController pid1;
 String message;
-
+int loopCounter = 0;
 // Variables
 float prevEncDegrees, currEncDegrees, encAngVel = 0.0;
 unsigned long startTime, endTime;
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600);
   Serial.setTimeout(2);
 
   pid1.begin(0, 0.8, 0.5, 0.2); // Initalize PIDController with initial value 0, P=0.8, I=0.5, D=0.2
@@ -104,8 +106,8 @@ void setup() {
 }
 
 void loop() {
-  readEncoders();
-  pidTesting();
+  // readEncoders();
+  // pidTesting();
   updateMessage();
   updateValues();
   controlMotors();
@@ -113,25 +115,69 @@ void loop() {
 
 void controlMotors(){
   if(message == "1up") {
-    Serial.println("FS+A)FI+)ASID)");
-    motors[0].setSpeed(255);  // Run forward at 50% speed.
+    motors[0].setSpeed(255); 
   }
   if(message == "1down") {
-    Serial.println("MOVING down!!!");
-    motors[0].setSpeed(-128);  // Run forward at 50% speed.
+    motors[0].setSpeed(128); 
   }
   if(message == "1stop") {
-    motors[0].setSpeed(0);  // Run forward at 50% speed.
+    motors[0].setSpeed(0);  
   } 
+
+  if(message == "2up") {
+    motors[1].setSpeed(50); 
+  }
+  if(message == "2down") {
+    motors[1].setSpeed(-50); 
+  }
+  if(message == "2stop") {
+    motors[1].setSpeed(0);  
+  } 
+  
+
+  if(message == "3up") {
+    motors[2].setSpeed(255); 
+  }
+  if(message == "3down") {
+    motors[2].setSpeed(-128); 
+  }
+  if(message == "3stop") {
+    motors[2].setSpeed(0);  
+  } 
+
+  if(message == "4up") {
+    motors[3].setSpeed(50); 
+  }
+  if(message == "4down") {
+    motors[3].setSpeed(-50); 
+  }
+  if(message == "4stop") {
+    motors[3].setSpeed(0);  
+  } 
+
+  if(message == "5up") {
+    motors[4].setSpeed(50); 
+  }
+  if(message == "5down") {
+    motors[4].setSpeed(-50); 
+  }
+  if(message == "5stop") {
+    motors[4].setSpeed(0);  
+  } 
+
 
 }
 void updateValues(){
-    for(int i = 0; i < 6; i++){
+    for(int i = 0; i < 5; i++){
     sensor_voltage[i] = ((analogRead(analogPins[i]) /1024.0) * 5);  // read the input pin
     sensor_current[i] = abs(((20 * sensor_voltage[i]) - 50));
+    if(sensor_current[i] > 0.5 || loopCounter % 20 == 0){
+      Serial.print("c,"); Serial.print(i + 1); Serial.print(","); Serial.println(sensor_current[i]);
+    }
+    loopCounter++;
   }
 
-    Serial.println(sensor_current[4]);
+    // Serial.println("c," + i + "," + sensor_current[4]);
 
 }
 void updateMessage(){

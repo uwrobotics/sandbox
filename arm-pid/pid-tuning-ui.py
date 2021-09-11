@@ -18,7 +18,7 @@ high_S = max_value
 high_V = max_value
 # time.sleep(3)
 
-ser = serial.Serial('/dev/cu.usbmodem11301', 115200, timeout=.1)
+ser = serial.Serial('/dev/cu.usbmodem11301', 9600, timeout=2)
 print("Reset Arduino")
 ser.write(bytes('cu.usbmodem11301', 'UTF-8'))
 
@@ -40,23 +40,30 @@ def main():
     high_V = max_value
     # define the window layout
     layout = [
-      [sg.Image(filename='', key='-IMAGE-')],
-      [sg.Text('Joint'), 
-       sg.InputText("", size=(5, 5), key='-joint-')],
-      [sg.Text('P'), 
-       sg.InputText("", size=(5, 5), key='-P-')],
-      [sg.Text('I'),
-       sg.InputText("", size=(5, 5), key='-I-')],
-      [sg.Text('D'),
-       sg.InputText("", size=(5, 5), key='-D-')],
-      [sg.Button('Submit')],
+    #   [sg.Image(filename='', key='-IMAGE-')],
+    #   [sg.Text('Joint'), 
+    #    sg.InputText("", size=(5, 5), key='-joint-')],
+    #   [sg.Text('P'), 
+    #    sg.InputText("", size=(5, 5), key='-P-')],
+    #   [sg.Text('I'),
+    #    sg.InputText("", size=(5, 5), key='-I-')],
+    #   [sg.Text('D'),
+    #    sg.InputText("", size=(5, 5), key='-D-')],
+    #   [sg.Button('Submit')],
+      [sg.Text('Current1:                                                  ', font='Ariel 24', key='-c1-')],
+      [sg.Text('Current2:                                                  ', font='Ariel 24', key='-c2-')],
+      [sg.Text('Current3:                                                  ', font='Ariel 24', key='-c3-')],
+      [sg.Text('Current4:                                                  ', font='Ariel 24', key='-c4-')],
+      [sg.Text('Current5:                                                  ', font='Ariel 24', key='-c5-')],
+      [sg.Text('Current6:                                                  ', font='Ariel 24', key='-c6-')],
+
       [sg.Button('1⬆️'), sg.Button('2⬆️'), sg.Button('3⬆️'), sg.Button('4⬆️'), sg.Button('5⬆️'), sg.Button('6⬆️')],
       [sg.Button('1-'), sg.Button('2-'), sg.Button('3-'), sg.Button('4-'), sg.Button('5-'), sg.Button('6-')],
       [sg.Button('1⬇️'), sg.Button('2⬇️'), sg.Button('3⬇️'), sg.Button('4⬇️'), sg.Button('5⬇️'), sg.Button('6⬇️')],
     ]
 
     # Create the window
-    window = sg.Window('PID Tuner', layout, location=(800, 400))
+    window = sg.Window('Jank Motor Controller', layout, location=(800, 400))
 
     # Start video stream
     # cap = cv2.VideoCapture(0)
@@ -65,19 +72,24 @@ def main():
         
         event, values = window.read(timeout=20)
 
-        joint = values['-joint-']
-        p = values['-P-']
-        i = values['-I-']
-        d = values['-D-']
+        # joint = values['-joint-']
+        # p = values['-P-']
+        # i = values['-I-']
+        # d = values['-D-']
         
-        print(ser.readline().decode().strip())
+        line = ser.readline().decode().strip()
+        # print(line)
         ser.flushInput()
         ser.flushOutput()
 
+        streamedData = line.split(",")
+        if(len(streamedData) > 2 and streamedData[0] == "c"):
+            window['-c'+ streamedData[1] + '-'].update('Current' +  streamedData[1] + ": " + streamedData[2] + "A")
+
         if event == 'Exit' or event == sg.WIN_CLOSED:
             break
-        if event == 'Submit':
-            ser.write(bytes(joint + "," + p + "," + i + "," + d, 'UTF-8'))
+        # if event == 'Submit':
+        #     ser.write(bytes(joint + "," + p + "," + i + "," + d, 'UTF-8'))
             # print(joint + "," + p + "," + i + "," + d)
 
 
