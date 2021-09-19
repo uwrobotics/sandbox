@@ -7,6 +7,7 @@ import time
 from mcp3008 import MCP3008
 import threading
 from datetime import datetime
+import csv
 
 MCAST_GRP = '224.1.1.1'
 MCAST_PORT = 5007
@@ -66,14 +67,15 @@ def update_duty_cycle(left:int, right:int):
 init_socket()
 
 adc = MCP3008()
-f = open("drivetrain_current_log.txt", "a")
+f = open("current_log_drivetrain.txt", "a")
+writer = csv.writer(f)
+writer.writerow(['Time', 'Channel', 'Voltage'])
 def read_current(channel: int):
     value = adc.read(channel)
     t = time.localtime()
     current_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-    string = f"Time: {current_time} | Channel: {channel} | Applied voltage: {(value / 1023.0 * 3.3)}\n"
-    print(string)
-    f.write(string)
+    #string = f"Time: {current_time} | Channel: {channel} | Applied voltage: {(value / 1023.0 * 3.3)}\n"
+    writer.writerow([current_time, channel + 1, (value / 1023.0 * 3.3)])
 
 def read_current_thread():
     for i in range(0, 6):
