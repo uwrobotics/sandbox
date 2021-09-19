@@ -4,6 +4,9 @@ import socket
 import struct
 import RPi.GPIO as IO
 import time
+from mcp3008 import MCP3008
+import threading
+from datetime import datetime
 
 MCAST_GRP = '224.1.1.1'
 MCAST_PORT = 5007
@@ -14,7 +17,7 @@ pin_pwm_left = 13
 pin_pwm_right = 12
 pin_dir_left = 5
 pin_dir_right = 6
-timeout_s = 0.5
+timeout_s = 0.2
 
 data_struct = struct.Struct('>BB')
 
@@ -46,7 +49,7 @@ def update_duty_cycle(left:int, right:int):
     """0 - 255, 127 deadpoint"""
     left = int((left - 127)/127*100)
     right = int((right - 127)/127*100)
-    print("Left -> " + str(left) + " | Right -> " + str(right))
+    #print("Left -> " + str(left) + " | Right -> " + str(right))
     if(left < 0):
         IO.output(pin_dir_left, 0)
     else:
@@ -60,14 +63,30 @@ def update_duty_cycle(left:int, right:int):
     PWM_LEFT_OBJ.ChangeDutyCycle(abs(left))
     PWM_RIGHT_OBJ.ChangeDutyCycle(abs(right))       
 
-init_socket()   
+init_socket()
 
+adc = MCP3008()
+f = open("drivetrain_current_log.txt", "a")
+def read_current(channel: int):
+    value = adc.read(channel)
+    t = time.localtime()
+    current_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+    string = f"Time: {current_time} | Channel: {channel} | Applied voltage: {(value / 1023.0 * 3.3)}\n"
+    print(string)
+    f.write(string)
+
+def read_current_thread():
+    for i in range(0, 6):
+        read_current(i)
+
+print("Starting RC drivetrain application!")
 while True:
   try:
     packet = sock.recv(10240)
     decoded_msg = data_struct.unpack(packet)
     update_duty_cycle(decoded_msg[0], decoded_msg[1])
   except socket.timeout:
+      print("Drivetrain stopped - no input received")
       update_duty_cycle(127, 127) #Stop driving if transmissions stop
 
-  
+  read_current_thread()
