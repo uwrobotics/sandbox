@@ -2,25 +2,24 @@ import control_joystick
 import socket
 import time
 import math
+import keyboard
 
 MCAST_GRP = '224.1.1.1'
 MCAST_PORT = 5007
-# regarding socket.IP_MULTICAST_TTL
-# ---------------------------------
-# for all packets sent, after two hops on the network the packet will not 
-# be re-sent/broadcast (see https://www.tldp.org/HOWTO/Multicast-HOWTO-6.html)
 MULTICAST_TTL = 2
+USE_KEYBOARD = False
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, MULTICAST_TTL)
 
 #control_joystick inits
-controller = control_joystick.joystick_inits()
+if(not USE_KEYBOARD):
+    controller = control_joystick.joystick_inits()
 
 def arcade_to_tank(inputs: list) -> list:
     """Returns tank drive outputs from an arcade drive input, performs some inverse kinematics"""
 
-    xSpeed = inputs[1]
+    xSpeed = inputs[1] * -1
     zRotation = inputs[0] * -1
     print("X Speed -> " + str(xSpeed), " | zRot -> " + str(zRotation))
     leftSpeed = 0

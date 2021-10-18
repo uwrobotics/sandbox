@@ -70,25 +70,51 @@ adc = MCP3008()
 f = open("current_log_drivetrain.txt", "a")
 writer = csv.writer(f)
 writer.writerow(['Time', 'Channel', 'Voltage'])
+summed_voltages = 0
+number_of_samples = 0
+peak_voltage = 0
+neutral = 3.3/2
 def read_current(channel: int):
     value = adc.read(channel)
+    voltage = abs(neutral - (value / 1023.0 * 3.3))
     t = time.localtime()
     current_time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-    #string = f"Time: {current_time} | Channel: {channel} | Applied voltage: {(value / 1023.0 * 3.3)}\n"
+    string = f"Time: {current_time} | Channel: {channel} | Applied voltage: {voltage}\n"
+    #print(string)
     writer.writerow([current_time, channel + 1, (value / 1023.0 * 3.3)])
+
+    #Current Calcs
+    global number_of_samples
+    global summed_voltages
+    global peak_voltage
+    number_of_samples += 1
+    summed_voltages += voltage
+    if(voltage > peak_voltage):
+        peak_voltage = voltage
+    print(f"Average Current: {convert_voltage_to_torque(summed_voltages/number_of_samples)} | Peak Current: {convert_voltage_to_torque(peak_voltage)}")
+
+def convert_voltage_to_torque(voltage):
+    return voltage * 25
 
 def read_current_thread():
     for i in range(0, 6):
         read_current(i)
 
+deadband = 8
 print("Starting RC drivetrain application!")
 while True:
   try:
     packet = sock.recv(10240)
     decoded_msg = data_struct.unpack(packet)
-    update_duty_cycle(decoded_msg[0], decoded_msg[1])
+    left = decoded_msg[0]
+    right = decoded_msg[1]
+    if((left > 127 + deadband or left < 127 - deadband) or (right > 127 + deadband or right < 127 - deadband)):
+        update_duty_cycle(left, right)
+        read_current_thread()
+    else:
+        update_duty_cycle(127, 127)
   except socket.timeout:
       print("Drivetrain stopped - no input received")
       update_duty_cycle(127, 127) #Stop driving if transmissions stop
 
-  read_current_thread()
+  
